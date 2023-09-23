@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using TrilhaApiDesafio.Context;
+using TrilhaApiDesafio.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,8 @@ builder.Services.AddDbContext<OrganizadorContext>(options =>
 
 builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+builder.Services.AddScoped<TarefaService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -24,6 +27,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+CheckForMigrations(app);
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
@@ -31,3 +36,16 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+void CheckForMigrations(IApplicationBuilder app)
+{
+    try
+    {
+        using var scope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope();
+        scope.ServiceProvider.GetService<OrganizadorContext>().Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error applying migration: {ex.Message}");
+    }
+}
